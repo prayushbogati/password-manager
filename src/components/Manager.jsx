@@ -16,11 +16,19 @@ const Manager = () => {
     // let passwordArray = []
     let [passwordArray, setPasswordArray] = useState([])
 
+    const getPasswords = async () => { // for use of mongoDB
+        const req = await fetch("http://localhost:3000/")
+        const passwords = await req.json()
+        console.log(passwords);
+        setPasswordArray(passwords)
+    }
+
     useEffect(() => {
-        let passwords = localStorage.getItem("passwords");
-        if (passwords) {
-            setPasswordArray(JSON.parse(passwords))
-        }
+        getPasswords();
+        // let passwords = localStorage.getItem("passwords");
+        // if (passwords) {
+        //     setPasswordArray(JSON.parse(passwords))
+        // }
     }, [])
 
 
@@ -30,16 +38,20 @@ const Manager = () => {
         })
         //or { ...form, [e.target.name]: e.target.value })
     }
-    const savePassword = () => {
+    const savePassword = async () => {
 
         if (form.site.length > 3 && form.username.length > 3 && form.password.length > 3) {
-
             // passwordArray.push(form) wrong!
             setPasswordArray(passwordArray => {
                 return [...passwordArray, { ...form, id: uuidv4() }]
             })
+
+            await fetch("http://localhost:3000/", { method: "DELETE", headers: { "Content-type": "application/json" }, body: JSON.stringify({ id: form.id }) })  //using mongoDB
+
+            await fetch("http://localhost:3000/", { method: "POST", headers: { "Content-type": "application/json" }, body: JSON.stringify({ ...form, id: uuidv4() }) })  //using mongoDB
+
             // or setPasswordArray([...passwordArray, form])
-            localStorage.setItem("passwords", JSON.stringify([...passwordArray, { ...form, id: uuidv4() }]))
+            // localStorage.setItem("passwords", JSON.stringify([...passwordArray, { ...form, id: uuidv4() }]))   ********using localstorage*********
             // console.log([...passwordArray, { ...form, id: uuidv4() }]);
 
             toast.success('Password saved successfully!', {
@@ -77,16 +89,22 @@ const Manager = () => {
         navigator.clipboard.writeText(item);
     }
 
-    const handleEdit = (id) => {
+    const handleEdit = async (id) => {
         setPasswordArray(passwordArray.filter((item) => item.id !== id))
-        setform(passwordArray.filter(item => item.id === id)[0])
+        // setform(passwordArray.filter(item => item.id === id)[0])
+        setform({ ...passwordArray.filter(item => item.id === id)[0], id: id }) //for mongoDB
+        await fetch("http://localhost:3000/", { method: "DELETE", headers: { "Content-type": "application/json" }, body: JSON.stringify({ id }) })  //using mongoDB
     }
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         const confirmation = confirm("Are you sure?");
         if (confirmation) {
             setPasswordArray(passwordArray.filter((item) => item.id !== id))
-            localStorage.setItem("passwords", JSON.stringify(passwordArray.filter((item) => item.id !== id)))
+
+            await fetch("http://localhost:3000/", { method: "DELETE", headers: { "Content-type": "application/json" }, body: JSON.stringify({ id }) })  //using mongoDB
+
+            // localStorage.setItem("passwords", JSON.stringify(passwordArray.filter((item) => item.id !== id)))
+
             toast.success('Password deleted successfully!', {
                 position: "top-right",
                 autoClose: 5000,
