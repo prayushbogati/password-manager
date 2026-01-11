@@ -9,15 +9,8 @@ const Navbar = () => {
                 <span>pass</span>
                 <span className='text-green-600'>Man/&gt;</span>
             </div>
-            <ul className='flex gap-4'>
-                <a className="hover:font-bold" href="#home">Home</a>
-                <a className="hover:font-bold" href="#about">About</a>
-                <a className="hover:font-bold" href="#contact">Contact</a>
-            </ul>
 
-            <a href="https://github.com/prayushbogati" target='_blank'><GitHubIcon /></a>
-
-
+            <a href="https://github.com/prayushbogati" target='_blank' ><GitHubIcon /></a>
         </nav>
     )
 }
