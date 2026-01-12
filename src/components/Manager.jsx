@@ -15,6 +15,7 @@ const Manager = () => {
     const [showPassword, setShowPassword] = useState(false);
     // let passwordArray = []
     let [passwordArray, setPasswordArray] = useState([])
+    const [editingId, setEditingId] = useState(null);
 
     const getPasswords = async () => { // for use of mongoDB
         const req = await fetch("http://localhost:3000/")
@@ -41,14 +42,19 @@ const Manager = () => {
     const savePassword = async () => {
 
         if (form.site.length > 3 && form.username.length > 3 && form.password.length > 3) {
-            // passwordArray.push(form) wrong!
+            // passwordArray.push(form) wrong! dont use arrays as no re-render persistance
+
+            if (editingId) {
+                await fetch("http://localhost:3000/", { method: "DELETE", headers: { "Content-type": "application/json" }, body: JSON.stringify({ id: form.editingId }) })  // to remove the prev. obj. from db for edit/update
+
+                setEditingId(null)
+            }
+
             setPasswordArray(passwordArray => {
                 return [...passwordArray, { ...form, id: uuidv4() }]
             })
 
-            await fetch("http://localhost:3000/", { method: "DELETE", headers: { "Content-type": "application/json" }, body: JSON.stringify({ id: form.id }) })  //using mongoDB
-
-            await fetch("http://localhost:3000/", { method: "POST", headers: { "Content-type": "application/json" }, body: JSON.stringify({ ...form, id: uuidv4() }) })  //using mongoDB
+            await fetch("http://localhost:3000/", { method: "POST", headers: { "Content-type": "application/json" }, body: JSON.stringify({ ...form, id: uuidv4() }) })  //post obj to db
 
             // or setPasswordArray([...passwordArray, form])
             // localStorage.setItem("passwords", JSON.stringify([...passwordArray, { ...form, id: uuidv4() }]))   ********using localstorage*********
@@ -90,10 +96,10 @@ const Manager = () => {
     }
 
     const handleEdit = async (id) => {
-        setPasswordArray(passwordArray.filter((item) => item.id !== id))
         // setform(passwordArray.filter(item => item.id === id)[0])
         setform({ ...passwordArray.filter(item => item.id === id)[0], id: id }) //for mongoDB
-        await fetch("http://localhost:3000/", { method: "DELETE", headers: { "Content-type": "application/json" }, body: JSON.stringify({ id }) })  //using mongoDB
+        setPasswordArray(passwordArray.filter((item) => item.id !== id))
+        setEditingId(id)
     }
 
     const handleDelete = async (id) => {
@@ -121,6 +127,7 @@ const Manager = () => {
 
     return (
         <div>
+         
             <ToastContainer
                 style={{ top: "50px" }}
                 position="top-right"
@@ -135,7 +142,7 @@ const Manager = () => {
                 theme="light"
                 transition={Bounce}
             />
-            <div className="my-container ">
+            <div className="p-30 md:p-30 pt-20 md:pt-20 md:my-container min-h-[86vh]">
                 <div className='text-center'>
                     <h1 className='text-2xl font-bold'>
                         <span className='text-green-600'>&lt;</span>
@@ -150,23 +157,23 @@ const Manager = () => {
                 }}>
                     <div className='flex flex-col gap-4 mt-4 items-center'>
                         <input value={form.site} onChange={handleChange} placeholder='Enter website name' className="border border-purple-300 rounded-2xl px-2 w-full" type="text" name='site' autoComplete='off' />
-                        <div className="flex justify-between gap-4 w-full">
+                        <div className="flex flex-col md:flex-row md:justify-between gap-4 md:w-full w-full">
                             <input value={form.username} onChange={handleChange} placeholder='Enter Username' className="border border-purple-300 w-full rounded-2xl px-2" type="text" name='username' autoComplete='off' />
-                            <div className="relative">
-                                <input value={form.password} onChange={handleChange} placeholder='Enter Password' className="border border-purple-300 w-min rounded-2xl px-2" type={showPassword ? "text" : "password"} name='password' autoComplete='off' />
+                            <div className="relative @md:w-full">
+                                <input value={form.password} onChange={handleChange} placeholder='Enter Password' className="border border-purple-300 md:w-min rounded-2xl px-2 w-full" type={showPassword ? "text" : "password"} name='password' autoComplete='off' />
                                 <span className='absolute top-0 right-2 cursor-pointer' onClick={() => { setShowPassword(showPassword ? false : true) }}>
                                     {showPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
                                 </span>
                             </div>
                         </div>
-                        <button type='submit' className='bg-green-500 rounded-2xl px-4 py-1 hover:bg-green-600 flex justify-center items-center gap-2 w-fit cursor-pointer'>
+                        <button type='submit' className='bg-green-500 rounded-2xl px-4 py-1 hover:bg-green-600 flex justify-center items-center gap-2 w-fit @md:w-10 cursor-pointer'>
                             <lord-icon
                                 src="https://cdn.lordicon.com/efxgwrkc.json"
                                 trigger="hover"
                                 colors="primary:#000000"
-                                style={{ width: 25, height: 25 }}>
+                                style={{ width: 20, height: 20 }}>
                             </lord-icon>
-                            Save Password
+                            Save
                         </button>
                     </div>
                 </form>
@@ -174,36 +181,39 @@ const Manager = () => {
                 <div className='mt-4'>
                     <h1 className='font-bold'>Passwords:</h1>
                     {passwordArray.length == 0 && <div>No passwords to show</div>}
-                    {passwordArray.length != 0 && <table className="w-full min-h-full text-center rounded-md overflow-hidden mb-10">
-                        <thead className='bg-purple-600 text-white'>
-                            <tr>
-                                <th className='px-4 w-3 py-1.5'>Website</th>
-                                <th className='px-4 w-3 py-1.5'>Username</th>
-                                <th className='px-4 w-3 py-1.5'>Password</th>
-                                <th className='px-4 w-3 py-1.5'>Action</th>
-                            </tr>
-                        </thead>
-                        {passwordArray.map((item, index) => {
-                            return < tbody className='bg-purple-100' key={index}>
-                                <tr>
-                                    <td className='px-4 max-w-2 py-1.5 wrap-break-word'><a className='text-blue-600' href={item.site} target='_blank'>{item.site}</a>
-                                        <span className='cursor-pointer' onClick={() => { handleCopy(item.site) }}>   <ContentCopyIcon fontSize='small' /></span>
-                                    </td>
-                                    <td className='px-4 max-w-3 py-1.5 wrap-break-word'>{item.username}
-                                        <span className='cursor-pointer' onClick={() => { handleCopy(item.username) }}>  <ContentCopyIcon fontSize='small' /></span>
-                                    </td>
-                                    <td className='px-4 max-w-3 py-1.5 wrap-break-word'>{item.password}
-                                        <span className='cursor-pointer' onClick={() => { handleCopy(item.password) }}>  <ContentCopyIcon fontSize='small' /></span>
-                                    </td>
-                                    <td className='px-4 max-w-3 py-1.5 wrap-break-word'>
-                                        <span className='cursor-pointer mx-1' onClick={() => { handleEdit(item.id) }}> <EditIcon fontSize='small' /></span>
-                                        <span className='cursor-pointer mx-1' onClick={() => { handleDelete(item.id) }}> <DeleteIcon fontSize='small' /></span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        })
-                        }
-                    </table>}
+                    {passwordArray.length != 0 &&
+                        <div className='p-2 w-full flex justify-center items-center'>
+                            <table className="min-w-full min-h-full text-center rounded-md overflow-hidden mb-5">
+                                <thead className='bg-purple-600 text-white'>
+                                    <tr>
+                                        <th className='px-4 @md:w-2 w-3 py-1.5'>Website</th>
+                                        <th className='px-4 @md:w-2 w-3 py-1.5'>Username</th>
+                                        <th className='px-4 @md:w-2 w-3 py-1.5'>Password</th>
+                                        <th className='px-4 @md:w-2 w-3 py-1.5'>Action</th>
+                                    </tr>
+                                </thead>
+                                {passwordArray.map((item, index) => {
+                                    return < tbody className='bg-purple-100' key={index}>
+                                        <tr>
+                                            <td className='px-4 max-w-2 py-1.5 wrap-break-word'><a className='text-blue-600' href={item.site} target='_blank'>{item.site}</a>
+                                                <span className='cursor-pointer' onClick={() => { handleCopy(item.site) }}>   <ContentCopyIcon fontSize='small' /></span>
+                                            </td>
+                                            <td className='px-4 max-w-3 py-1.5 wrap-break-word'>{item.username}
+                                                <span className='cursor-pointer' onClick={() => { handleCopy(item.username) }}>  <ContentCopyIcon fontSize='small' /></span>
+                                            </td>
+                                            <td className='px-4 max-w-3 py-1.5 wrap-break-word'>{item.password}
+                                                <span className='cursor-pointer' onClick={() => { handleCopy(item.password) }}>  <ContentCopyIcon fontSize='small' /></span>
+                                            </td>
+                                            <td className='px-4 max-w-3 py-1.5 wrap-break-word'>
+                                                <span className='cursor-pointer mx-1' onClick={() => { handleEdit(item.id) }}> <EditIcon fontSize='small' /></span>
+                                                <span className='cursor-pointer mx-1' onClick={() => { handleDelete(item.id) }}> <DeleteIcon fontSize='small' /></span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                })
+                                }
+                            </table>
+                        </div>}
                 </div>
             </div >
         </div>
