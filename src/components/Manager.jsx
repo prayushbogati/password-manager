@@ -17,19 +17,19 @@ const Manager = () => {
     let [passwordArray, setPasswordArray] = useState([])
     const [editingId, setEditingId] = useState(null);
 
-    const getPasswords = async () => { // for use of mongoDB
-        const req = await fetch("http://localhost:3000/")
-        const passwords = await req.json()
-        console.log(passwords);
-        setPasswordArray(passwords)
-    }
+    // const getPasswords = async () => { // for use of mongoDB
+    //     const req = await fetch("http://localhost:3000/")
+    //     const passwords = await req.json()
+    //     console.log(passwords);
+    //     setPasswordArray(passwords)
+    // }
 
     useEffect(() => {
-        getPasswords();
-        // let passwords = localStorage.getItem("passwords");
-        // if (passwords) {
-        //     setPasswordArray(JSON.parse(passwords))
-        // }
+        // getPasswords();
+        let passwords = localStorage.getItem("passwords");
+        if (passwords) {
+            setPasswordArray(JSON.parse(passwords))
+        }
     }, [])
 
 
@@ -44,21 +44,22 @@ const Manager = () => {
         if (form.site.length > 3 && form.username.length > 3 && form.password.length > 3) {
             // passwordArray.push(form) wrong! dont use arrays as no re-render persistance
 
-            if (editingId) {
-                await fetch("http://localhost:3000/", { method: "DELETE", headers: { "Content-type": "application/json" }, body: JSON.stringify({ id: form.editingId }) })  // to remove the prev. obj. from db for edit/update
+            // if (editingId) {
+            //     await fetch("http://localhost:3000/", { method: "DELETE", headers: { "Content-type": "application/json" }, body: JSON.stringify({ id: form.editingId }) })  // to remove the prev. obj. from db for edit/update
 
-                setEditingId(null)
-            }
+            //     setEditingId(null)
+            // }
 
             setPasswordArray(passwordArray => {
                 return [...passwordArray, { ...form, id: uuidv4() }]
             })
 
-            await fetch("http://localhost:3000/", { method: "POST", headers: { "Content-type": "application/json" }, body: JSON.stringify({ ...form, id: uuidv4() }) })  //post obj to db
+            // await fetch("http://localhost:3000/", { method: "POST", headers: { "Content-type": "application/json" }, body: JSON.stringify({ ...form, id: uuidv4() }) })  //post obj to db
 
             // or setPasswordArray([...passwordArray, form])
-            // localStorage.setItem("passwords", JSON.stringify([...passwordArray, { ...form, id: uuidv4() }]))   ********using localstorage*********
-            // console.log([...passwordArray, { ...form, id: uuidv4() }]);
+            localStorage.setItem("passwords", JSON.stringify([...passwordArray, { ...form, id: uuidv4() }]))  
+            // ********using localstorage*********
+            console.log([...passwordArray, { ...form, id: uuidv4() }]);
 
             toast.success('Password saved successfully!', {
                 position: "top-right",
@@ -96,8 +97,8 @@ const Manager = () => {
     }
 
     const handleEdit = async (id) => {
-        // setform(passwordArray.filter(item => item.id === id)[0])
-        setform({ ...passwordArray.filter(item => item.id === id)[0], id: id }) //for mongoDB
+        setform(passwordArray.filter(item => item.id === id)[0])
+        // setform({ ...passwordArray.filter(item => item.id === id)[0], id: id }) //for mongoDB
         setPasswordArray(passwordArray.filter((item) => item.id !== id))
         setEditingId(id)
     }
@@ -105,11 +106,11 @@ const Manager = () => {
     const handleDelete = async (id) => {
         const confirmation = confirm("Are you sure?");
         if (confirmation) {
-            setPasswordArray(passwordArray.filter((item) => item.id !== id))
+            // setPasswordArray(passwordArray.filter((item) => item.id !== id))
 
-            await fetch("http://localhost:3000/", { method: "DELETE", headers: { "Content-type": "application/json" }, body: JSON.stringify({ id }) })  //using mongoDB
+            // await fetch("http://localhost:3000/", { method: "DELETE", headers: { "Content-type": "application/json" }, body: JSON.stringify({ id }) })  //using mongoDB
 
-            // localStorage.setItem("passwords", JSON.stringify(passwordArray.filter((item) => item.id !== id)))
+            localStorage.setItem("passwords", JSON.stringify(passwordArray.filter((item) => item.id !== id)))
 
             toast.success('Password deleted successfully!', {
                 position: "top-right",
